@@ -3,8 +3,8 @@ module github.com/calvinbui/slack-csgo
 go 1.13
 
 require (
-	github.com/autom8ter/slasher v0.0.1
-	github.com/james4k/rcon v0.0.0-20120923215419-8fbb8268b60a
+	github.com/gorilla/websocket v1.4.0 // indirect
+	github.com/ikkerens/rcon v1.0.7
 	github.com/nlopes/slack v0.6.0
-	github.com/pkg/errors v0.8.0
+	github.com/stretchr/testify v1.4.0 // indirect
 )
