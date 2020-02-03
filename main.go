@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -31,10 +32,13 @@ func main() {
 	}
 	fmt.Println("RCON client created")
 
-	http.HandleFunc("/slack", func(w http.ResponseWriter, r *http.Request) {
+	sm := http.NewServeMux()
+
+	sm.HandleFunc("/slack", func(w http.ResponseWriter, r *http.Request) {
 		verifier, err := slack.NewSecretsVerifier(r.Header, slackSigningToken)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Println("Request did not matchs slack signing token")
 			return
 		}
 
@@ -42,16 +46,19 @@ func main() {
 		s, err := slack.SlashCommandParse(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Println("Cannot parse slack command")
 			return
 		}
 
 		if err = verifier.Ensure(); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Println("Unauthorised")
 			return
 		}
 
 		if s.ChannelName != slackChannel {
 			slackMsg(w, fmt.Sprintf("This application can only run in #%s", slackChannel))
+			fmt.Println("Cannot be used in this channel")
 			return
 		}
 
@@ -60,15 +67,19 @@ func main() {
 			rconResponse, err := rconSend(fmt.Sprintf("changelevel %s", s.Text))
 			if err != nil {
 				slackMsg(w, fmt.Sprintf("An error occured: %s", err.Error()))
+				fmt.Println("An error occured")
 			} else if strings.Contains(rconResponse, "CModelLoader::Map_IsValid") {
 				slackMsg(w, fmt.Sprintf("%s is not a valid map name", s.Text))
+				fmt.Println("Map is invalid")
 			} else {
 				slackMsg(w, fmt.Sprintf("The map has been changed to %s", s.Text))
+				fmt.Println("Map changed")
 			}
 		case "/restart":
 			_, err := rconSend("restart")
 			if err != nil {
 				slackMsg(w, fmt.Sprintf("An error occured: %s", err.Error()))
+				fmt.Println("An error occured")
 			} else {
 				slackMsg(w, "The game will restart at the end of the round")
 			}
@@ -80,7 +91,11 @@ func main() {
 
 	fmt.Println("Web server listening")
 
-	http.ListenAndServe("0.0.0.0:3000", nil)
+	l, err := net.Listen("tcp4", ":3000")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Fatal(http.Serve(l, sm))
 }
 
 func rconSend(s string) (string, error) {
