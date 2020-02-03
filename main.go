@@ -80,7 +80,7 @@ func main() {
 
 	fmt.Println("Web server listening")
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":3000", nil)
 }
 
 func rconSend(s string) (string, error) {
