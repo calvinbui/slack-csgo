@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/ikkerens/rcon"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 var (
